@@ -4,12 +4,14 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import com.esri.core.geometry.*;
 import org.json.JSONException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -29,7 +31,6 @@ import com.bmwcarit.barefoot.roadmap.TimePriority;
 import com.bmwcarit.barefoot.spatial.Geography;
 import com.bmwcarit.barefoot.topology.Dijkstra;
 import com.bmwcarit.barefoot.util.Tuple;
-import com.esri.core.geometry.Point;
 
 public class MapMatchingCore {
 
@@ -37,7 +38,7 @@ public class MapMatchingCore {
 		// TODO Auto-generated method stub
 
 		// Create Configuration
-
+		// config # {'101':(0.9, 130), ......}
 		Map<Short, Tuple<Double, Integer>> config = null;
 		try {
 			config = getConfiguration(config_file);
@@ -56,16 +57,22 @@ public class MapMatchingCore {
 		// Input as sample batch (offline) or sample stream (online)
 		List<MatcherSample> samples = new LinkedList<MatcherSample>();
 
-		try {
-			mapMatchOnline(matcher, state, samples, input_file, input_type);
-		} catch (IOException | ParseException | JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		try {
+//			mapMatchOnline(matcher, state, samples, input_file, input_type);
+//		} catch (IOException | ParseException | JSONException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 
 		// Offline map matching results
 		// List<MatcherCandidate> sequence = state.sequence();
 		// most likely sequence of positions
+		try {
+			mapMatchOffline(matcher, state, samples, input_file, input_type);
+		} catch (IOException | ParseException | JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private static Map<Short, Tuple<Double, Integer>> getConfiguration(String config_file) throws JSONException, IOException {
@@ -77,8 +84,13 @@ public class MapMatchingCore {
 		RoadMap map = RoadMap.Load(
 				new PostGISReader(Constants.HOSTNAME, Constants.PORT, Constants.DB, Constants.TABLE, Constants.USERNAME, Constants.PASSWORD, config));
 		map.construct();
+		Road road = map.get(2);
+		Polyline geometry = road.base().geometry();
+//		Polyline geometry = (Polyline) OperatorImportFromWkb.local().execute(0, Geometry.Type.Polyline, ByteBuffer.wrap(wkb), (ProgressTracker)null);
+		System.out.println("======");
 		return map;
 	}
+
 
 	private static long getRoadIDfromMatcherSample(MatcherSample sample, Matcher matcher, MatcherKState state) {
 
@@ -174,6 +186,36 @@ public class MapMatchingCore {
 			 * (transition != null) { // first point will have a null transition
 			 * Route route = transition.route(); // route to position }
 			 */
+		}
+	}
+
+	private static void mapMatchOffline(Matcher matcher, MatcherKState state, List<MatcherSample> samples, String input_file, int input_type)
+			throws IOException, ParseException, FileNotFoundException, JSONException {
+
+		if (input_type == 1) {
+			JSONParser parser = new JSONParser();
+			JSONArray GPSPositions = (JSONArray) parser.parse(new FileReader(input_file));
+
+			for (int n = 0; n < GPSPositions.size(); n++) {
+				JSONObject position = (JSONObject) GPSPositions.get(n);
+				samples.add(new MatcherSample(new org.json.JSONObject(position.toJSONString())));
+
+			}
+
+			state = matcher.mmatch(samples, 1, 500);
+
+			for (MatcherCandidate cand : state.sequence()) {
+				long refid = cand.point().edge().base().refid(); // OSM id
+				long id = cand.point().edge().base().id(); // road id
+//				cand.point().edge().heading(); // heading
+				Point geometry = cand.point().geometry(); // GPS position (on the road)
+				if (cand.transition() != null)
+					cand.transition().route().geometry(); // path geometry from last matching candidate
+				System.out.println("osmid:" + refid + "\t" + "id:" + id + "\t" + "geometry:" + geometry);
+			}
+		} else if (input_type == 2) {
+
+		} else if (input_type == 3) {
 		}
 	}
 
