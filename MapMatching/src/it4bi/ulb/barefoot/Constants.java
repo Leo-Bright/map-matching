@@ -6,7 +6,7 @@ public class Constants {
 	
 	public static final String HOSTNAME = "172.19.7.241";
 	public static final int PORT = 5432;
-	public static final String DB = "oberbayern";
+	public static final String DB = "tokyo";
 //	public static final String DB  = "greece";
 	public static final String TABLE = "bfmap_ways";
 	public static final String USERNAME = "osmuser";

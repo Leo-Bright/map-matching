@@ -1,17 +1,13 @@
 package it4bi.ulb.barefoot;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
+import com.bmwcarit.barefoot.road.BaseRoad;
+import com.bmwcarit.barefoot.road.RoadReader;
 import com.esri.core.geometry.*;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import org.json.JSONException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -74,6 +70,22 @@ public class MapMatchingCore {
 			e.printStackTrace();
 		}
 	}
+
+	public RoadMap getRoadMap(String config_file) {
+
+		Map<Short, Tuple<Double, Integer>> config = null;
+		try {
+			config = getConfiguration(config_file);
+		} catch (JSONException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		// Load and construct road map
+		RoadMap map = createRoadMap(config);
+		return map;
+	}
+
+
 
 	private static Map<Short, Tuple<Double, Integer>> getConfiguration(String config_file) throws JSONException, IOException {
 		Map<Short, Tuple<Double, Integer>> config = Configuration.read(config_file);
