@@ -1,14 +1,7 @@
 package it4bi.ulb.barefoot;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.io.*;
+import java.util.*;
 
 import org.json.JSONException;
 import org.json.simple.JSONArray;
@@ -76,8 +69,25 @@ public class MapMatchingCore {
 	private static RoadMap createRoadMap(Map<Short, Tuple<Double, Integer>> config) {
 		RoadMap map = RoadMap.Load(
 				new PostGISReader(Constants.HOSTNAME, Constants.PORT, Constants.DB, Constants.TABLE, Constants.USERNAME, Constants.PASSWORD, config));
+		try{
+			extractSegmentLength(map);
+		}catch (Exception e){
+			e.printStackTrace();
+		}
 		map.construct();
 		return map;
+	}
+
+	private static Boolean extractSegmentLength(RoadMap map) throws Exception{
+		Iterator iter = map.edges();
+		FileWriter filew = new FileWriter("tokyo.length",true);
+		while (iter.hasNext()){
+			Road road = (Road)iter.next();
+			float length = road.length();
+			filew.write(road.base().id()+" "+length+"\n");
+		}
+		filew.close();
+		return Boolean.TRUE;
 	}
 
 	private static long getRoadIDfromMatcherSample(MatcherSample sample, Matcher matcher, MatcherKState state) {
