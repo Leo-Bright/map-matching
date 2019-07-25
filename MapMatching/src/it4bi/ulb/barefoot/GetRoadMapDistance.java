@@ -19,11 +19,11 @@ public class GetRoadMapDistance {
 
         MapMatchingCore core = new MapMatchingCore();
 
-        RoadMap map = core.getRoadMap(config_file);
+//        RoadMap map = core.getRoadMap(config_file);
 
         GetRoadMapDistance instance = new GetRoadMapDistance();
 
-        instance.getDistance(input, output, map);
+//        instance.getDistance(input, output, map);
 
     }
 
